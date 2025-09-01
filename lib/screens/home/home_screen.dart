@@ -58,6 +58,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final habitProvider = Provider.of<HabitProvider>(context);
+    final quoteProvider = Provider.of<QuoteProvider>(context);
+
+    // Show loading if auth is still initializing
+    if (authProvider.isLoading) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text('Loading...'),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
@@ -153,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Welcome back${user?.displayName != null ? ', ${user!.displayName}' : ''}!',
+            'Welcome back${user?.displayName != null && user!.displayName.isNotEmpty ? ', ${user.displayName}' : ''}!',
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -180,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _buildStatCard(
             context,
             'Completed',
-            '${overallStats['completed']}/${overallStats['total']}',
+            '${overallStats['completedToday'] ?? 0}/${overallStats['totalHabits'] ?? 0}',
             Icons.check_circle,
             const Color(0xFF10B981),
           ),
@@ -190,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _buildStatCard(
             context,
             'Success Rate',
-            '${overallStats['successRate']}%',
+            '${(overallStats['completionRate'] ?? 0).toStringAsFixed(0)}%',
             Icons.trending_up,
             const Color(0xFF06B6D4),
           ),
@@ -200,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _buildStatCard(
             context,
             'Streak',
-            '${overallStats['streak']}',
+            '${overallStats['totalStreak'] ?? 0}',
             Icons.local_fire_department,
             const Color(0xFFF59E0B),
           ),
@@ -432,15 +452,17 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color:
-                  habit.isCompleted
+                  habit.isCompletedForDate(DateTime.now())
                       ? const Color(0xFF10B981).withOpacity(0.1)
                       : const Color(0xFF64748B).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              habit.isCompleted ? Icons.check : Icons.radio_button_unchecked,
+              habit.isCompletedForDate(DateTime.now())
+                  ? Icons.check
+                  : Icons.radio_button_unchecked,
               color:
-                  habit.isCompleted
+                  habit.isCompletedForDate(DateTime.now())
                       ? const Color(0xFF10B981)
                       : const Color(0xFF64748B),
               size: 20,
@@ -452,7 +474,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  habit.name,
+                  habit.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -474,18 +496,20 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color:
-                  habit.isCompleted
+                  habit.isCompletedForDate(DateTime.now())
                       ? const Color(0xFF10B981).withOpacity(0.1)
                       : const Color(0xFF64748B).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              habit.isCompleted ? 'Completed' : 'Pending',
+              habit.isCompletedForDate(DateTime.now())
+                  ? 'Completed'
+                  : 'Pending',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color:
-                    habit.isCompleted
+                    habit.isCompletedForDate(DateTime.now())
                         ? const Color(0xFF10B981)
                         : const Color(0xFF64748B),
               ),
